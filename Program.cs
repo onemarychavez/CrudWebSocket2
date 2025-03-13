@@ -20,7 +20,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 
-
 //agregar configuracion de JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
@@ -50,22 +49,33 @@ builder.Services.AddScoped<JwtService>();
 
 // Agregar SignalR
 builder.Services.AddSignalR();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins(["http://localhost:5173", "http://localhost:8086"]) // El origen de tu cliente React
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); // Si es necesario
+    });
+});
 
 var app = builder.Build();
 
 // Configurar CORS
-app.UseCors( x => x.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod());
+
 
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseHttpsRedirection();
 }
 
-app.UseHttpsRedirection();
+
 app.UseRouting();
 app.UseAuthorization();
-
+app.UseCors("AllowReactApp");
 // Configuración de SignalR (Hub)
 app.MapHub<ChatHub>("/hub"); // Asegúrate de que esta ruta coincida en tu cliente y servidor
 
